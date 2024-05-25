@@ -1,0 +1,381 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "US Post Offices",
+    "color": "darkgoldenrod",
+    "anchor": "middle",
+    "fontSize": 30,
+    "font": "Courier",
+    "subtitle": "Subhomoy Banerjee, 23205360",
+    "subtitleColor": "brown",
+    "subtitleFontStyle": "Courier",
+    "subtitleFontSize": 15,
+    "offset": "12"
+  },
+  "data": {
+    "url": "https://raw.githubusercontent.com/subhomoybanerjee/infoviz/main/postal.csv",
+    "format": {"type": "csv"}
+  },
+  "transform": [{"filter": "datum.duration > 0"}],
+  "config": {
+    "background": "aliceblue",
+    "axis": {"grid": true, "gridColor": "#eadada"}
+  },
+  "hconcat": [
+    {
+      "vconcat": [
+        {
+          "title": "postal office active duration per area",
+          "width": 800,
+          "height": 280,
+          "selection": {
+            "typeSelector": {
+              "type": "single",
+              "fields": ["gnis_feature_class"],
+              "bind": "legend"
+            },
+            "CategorySelect": {
+              "type": "single",
+              "fields": ["continuous"],
+              "bind": {
+                "input": "select",
+                "options": ["True", "False"],
+                "name": "Select continuous: "
+              }
+            },
+            "indexClass": {
+              "type": "multi",
+              "fields": ["stamp_index"],
+              "bind": "legend"
+            }
+          },
+          "transform": [
+            {
+              "filter": {
+                "and": [
+                  {"selection": "typeSelector"},
+                  {"selection": "CategorySelect"},
+                  {"selection": "indexClass"}
+                ]
+              }
+            }
+          ],
+          "mark": "bar",
+          "encoding": {
+            "x": {
+              "field": "duration",
+              "type": "nominal",
+              "bin": {"maxbins": 10},
+              "axis": {"title": "duration"}
+            },
+            "y": {
+              "aggregate": "count",
+              "type": "quantitative",
+              "axis": {"title": "count"}
+            },
+            "color": {
+              "field": "gnis_feature_class",
+              "type": "nominal",
+              "legend": {
+                "title": "Area",
+                "orient": "none",
+                "legendX": 850,
+                "legendY": 80,
+                "labelFontSize": 20,
+                "titleFontSize": 20
+              }
+            },
+            "tooltip": [
+              {"field": "duration", "type": "nominal"},
+              {
+                "field": "stamp_index",
+                "type": "nominal",
+                "title": "Stamp Index"
+              },
+              {
+                "field": "gnis_feature_class",
+                "type": "nominal",
+                "title": "Area"
+              },
+              {
+                "field": "title",
+                "aggregate": "count",
+                "gnis_feature_class": "quantitative",
+                "title": "count"
+              },
+              {"field": "continuous", "type": "nominal"}
+            ]
+          },
+          "config": {"bar": {"binSpacing": 2}}
+        },
+        {
+          "title": "US Counties Stamp Index Visualization",
+          "transform": [
+            {"calculate": "datum.latitude", "as": "lat"},
+            {"calculate": "datum.longitude", "as": "lon"},
+            {"filter": "datum.stamp_index < 10"}
+          ],
+          "layer": [
+            {
+              "data": {
+                "url": "https://raw.githubusercontent.com/subhomoybanerjee/infoviz/main/counties-10m.json",
+                "format": {"type": "topojson", "feature": "countries"}
+              },
+              "mark": {"type": "geoshape", "stroke": "white", "strokeWidth": 1}
+            },
+            {
+              "data": {
+                "url": "https://raw.githubusercontent.com/subhomoybanerjee/infoviz/main/counties-10m.json",
+                "format": {"type": "topojson", "feature": "counties"}
+              },
+              "mark": {
+                "type": "geoshape",
+                "stroke": "black",
+                "strokeWidth": 0.2,
+                "fill": "white"
+              }
+            },
+            {
+              "selection": {
+                "featureClass": {
+                  "type": "multi",
+                  "fields": ["gnis_feature_class"],
+                  "bind": "legend"
+                },
+                "CategorySelect": {
+                  "type": "single",
+                  "fields": ["continuous"],
+                  "bind": {
+                    "input": "select",
+                    "options": ["True", "False"],
+                    "name": "Select category: "
+                  }
+                },
+                "indexClass": {
+                  "type": "multi",
+                  "fields": ["stamp_index"],
+                  "bind": "legend"
+                }
+              },
+              "transform": [{"filter": {"selection": "CategorySelect"}}],
+              "mark": "circle",
+              "encoding": {
+                "longitude": {"field": "lon", "type": "quantitative"},
+                "latitude": {"field": "lat", "type": "quantitative"},
+                "size": {
+                  "condition": {
+                    "selection": "indexClass",
+                    "field": "stamp_index",
+                    "type": "nominal",
+                    "legend": {
+                      "title": "Stamp Index",
+                      "orient": "none",
+                      "legendX": 1070,
+                      "legendY": 100,
+                      "labelFontSize": 20,
+                      "titleFontSize": 20
+                    },
+                    "scale": {"range": [10, 100]}
+                  },
+                  "value": 50
+                },
+                "color": {
+                  "condition": {
+                    "selection": "featureClass",
+                    "field": "gnis_feature_class",
+                    "type": "nominal",
+                    "legend": {"title": "Area"},
+                    "scale": {"scheme": "rainbow"}
+                  },
+                  "value": "lightgray"
+                },
+                "opacity": {
+                  "condition": {
+                    "test": {
+                      "and": [
+                        {"selection": "featureClass"},
+                        {"selection": "indexClass"}
+                      ]
+                    },
+                    "value": 1
+                  },
+                  "value": 0
+                },
+                "tooltip": [
+                  {
+                    "field": "orig_county",
+                    "type": "nominal",
+                    "title": "County"
+                  },
+                  {
+                    "field": "stamp_index",
+                    "type": "nominal",
+                    "title": "Stamp Index"
+                  },
+                  {
+                    "field": "gnis_feature_class",
+                    "type": "nominal",
+                    "title": "Area"
+                  },
+                  {"field": "continuous", "type": "nominal"}
+                ]
+              }
+            }
+          ],
+          "projection": {"type": "albersUsa"},
+          "width": 1000,
+          "height": 500
+        }
+      ]
+    },
+    {
+      "vconcat": [
+        {
+          "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+          "title": {
+            "text": "Post offices temporarily closed before re-opening or not",
+            "anchor": "middle"
+          },
+          "height": 380,
+          "width": 700,
+          "selection": {
+            "CategorySelect": {
+              "type": "single",
+              "fields": ["continuous"],
+              "bind": {
+                "input": "select",
+                "options": ["True", "False"],
+                "name": "choose if continuous status"
+              }
+            },
+            "indexClass": {
+              "type": "multi",
+              "fields": ["stamp_index"],
+              "bind": "legend"
+            }
+          },
+          "transform": [
+            {
+              "filter": {
+                "and": [
+                  {"selection": "CategorySelect"},
+                  {"selection": "indexClass"}
+                ]
+              }
+            }
+          ],
+          "mark": {"type": "arc", "innerRadius": 70, "strokewidth": 20},
+          "encoding": {
+            "theta": {
+              "field": "gnis_feature_class",
+              "type": "quantitative",
+              "aggregate": "count",
+              "stack": "normalize"
+            },
+            "color": {
+              "field": "gnis_feature_class",
+              "type": "nominal",
+              "title": "Area"
+            },
+            "tooltip": [
+              {
+                "field": "gnis_feature_class",
+                "type": "nominal",
+                "title": "Area"
+              },
+              {
+                "field": "stamp_index",
+                "type": "nominal",
+                "title": "Stamp Index"
+              },
+              {
+                "field": "gnis_feature_class",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Count"
+              },
+              {"field": "continuous", "type": "nominal"}
+            ]
+          }
+        },
+        {
+          "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+          "title": "Office mean elevation through the established decades",
+          "height": 450,
+          "width": 700,
+          "selection": {
+            "AreaSelect": {
+              "type": "single",
+              "fields": ["gnis_feature_class"],
+              "bind": "legend"
+            },
+            "CategorySelect": {
+              "type": "single",
+              "fields": ["continuous"],
+              "bind": {
+                "input": "select",
+                "options": ["True", "False"],
+                "name": "Select category: "
+              }
+            },
+            "indexClass": {
+              "type": "multi",
+              "fields": ["stamp_index"],
+              "bind": "legend"
+            }
+          },
+          "transform": [
+            {
+              "filter": {
+                "and": [
+                  {"selection": "AreaSelect"},
+                  {"selection": "CategorySelect"},
+                  {"selection": "indexClass"}
+                ]
+              }
+            },
+            {"calculate": "floor(datum.established / 10) * 10", "as": "decade"}
+          ],
+          "mark": {"type": "line", "size": 2.5, "interpolate": "basis"},
+          "encoding": {
+            "x": {
+              "field": "decade",
+              "type": "ordinal",
+              "axis": {"title": "Decade"}
+            },
+            "y": {
+              "field": "gnis_elev_in_m",
+              "type": "quantitative",
+              "aggregate": "mean",
+              "axis": {"title": "Mean Elevation (meters)"}
+            },
+            "color": {
+              "field": "gnis_feature_class",
+              "type": "nominal",
+              "title": "Area"
+            },
+            "opacity": {
+              "condition": {"selection": "AreaSelect", "value": 1},
+              "value": 0.1
+            },
+            "tooltip": [
+              {"field": "continuous", "type": "nominal"},
+              {
+                "field": "gnis_feature_class",
+                "type": "nominal",
+                "title": "Area"
+              },
+              {
+                "field": "gnis_elev_in_m",
+                "aggregate": "mean",
+                "gnis_elev_in_m": "quantitative",
+                "title": "mean elevation"
+              },
+              {"field": "decade", "type": "quantitative"}
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
